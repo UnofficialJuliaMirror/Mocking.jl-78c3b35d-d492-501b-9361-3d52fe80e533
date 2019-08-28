@@ -8,6 +8,7 @@ include("patch.jl")
 include("mock.jl")
 include("deprecated.jl")
 
+# Create the initial definition of `activated` which defaults Mocking to be disabled
 activated() = false
 
 """
@@ -16,7 +17,19 @@ activated() = false
 Enable `@mock` call sites to allow for calling patches instead of the original function.
 """
 function activate()
-    Mocking.eval(:(activated() = true))
+    # Avoid redefining `activated` when it's already set appropriately
+    !activated() && Core.eval(@__MODULE__, :(activated() = true))
+    return nothing
+end
+
+"""
+    Mocking.deactivate()
+
+Disable `@mock` call sites to only call the original function.
+"""
+function deactivate()
+    # Avoid redefining `activated` when it's already set appropriately
+    activated() && Core.eval(@__MODULE__, :(activated() = false))
     return nothing
 end
 
